@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO to Vue binary</title>
+    <style>
+      .row {
+        width: 2000px;
+      }
+      .cell {
+        display: inline-block;
+        width: 40px;
+      }
+    </style>
+    <script src="https://unpkg.com/vue"></script>
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <grid :rows="rows" :columns="columns"></grid>
+    </div>
+
+    <script>
+
+      Vue.component('cell', {
+        props: ['value'],
+        template: '<div class="cell">{{value}}</div>'
+      })
+
+      Vue.component('row', {
+        props: ['item', 'meta'],
+        template:
+        '<div class="row">'+
+          '<cell v-for="col in meta" :value="item[col.key]"></cell>'+
+        '</div>'
+      })
+
+      Vue.component('grid', {
+      	props: ['columns', 'rows'],
+        template:
+        '<div>'+
+          '<row v-for="row in rows" :item="row" :meta="columns"></row>'+
+        '</div>'
+      })
+
+      const app = new Vue({
+        el: '#app',
+        data: {
+          rows: [['A', 'B']],
+          columns: [{'key': 0}, {'key': 1}]
+        }
+      })
+
+      const socket = io();
+      socket.on('grid-columns', (columns) => {
+        app.columns = columns;
+        console.log('columns', columns)
+      });
+
+      socket.on('grid-data', (msg) => {
+        const view = new Int32Array(msg);
+        const colCount = app.columns.length
+        const cellsCount = view.length;
+        const rows = []
+        const rowsCount = cellsCount / colCount
+
+        for(let i=0; i<cellsCount; i+=colCount) {
+          let row = []
+          for(let j=0; j<rowsCount; j++) {
+            row.push(view[i+j])
+          }
+          rows.push(row)
+        }
+        app.rows = rows;
+      });
+    </script>
+  </body>
+</html>
