@@ -3,53 +3,81 @@
   <head>
     <title>Socket.IO to Vue binary</title>
     <style>
-      .row {
+      #app {
+        font-size: 8px;
+      }
+      table {
+        table-layout:fixed;
         width: 2000px;
+      }
+      td {
+        width: 40px;
+      }
+      /*.row {
+        width: 4000px;
       }
       .cell {
         display: inline-block;
-        width: 40px;
-      }
+        width: 80px;
+      }*/
     </style>
     <script src="https://unpkg.com/vue"></script>
     <script src="/socket.io/socket.io.js"></script>
   </head>
   <body>
     <div id="app">
-      <grid :rows="rows" :columns="columns"></grid>
+      spanshots aggregated: {{count}}
+      <!-- <grid :rows="rows" :columns="columns"></grid> -->
+      <table-grid :rows="rows" :columns="columns"></table-grid>
     </div>
 
     <script>
 
-      Vue.component('cell', {
-        props: ['value'],
-        template: '<div class="cell">{{value}}</div>'
+      Vue.component('table-grid', {
+        props: ['columns', 'rows'],
+        template: `
+<table>
+  <tbody>
+    <tr v-for="row in rows">
+      <td v-for="col in columns">
+        {{row[col.key]}}
+      </td>
+    </tr>
+  </tbody>
+</table>
+`
       })
-
-      Vue.component('row', {
-        props: ['item', 'meta'],
-        template:
-        '<div class="row">'+
-          '<cell v-for="col in meta" :value="item[col.key]"></cell>'+
-        '</div>'
-      })
-
-      Vue.component('grid', {
-      	props: ['columns', 'rows'],
-        template:
-        '<div>'+
-          '<row v-for="row in rows" :item="row" :meta="columns"></row>'+
-        '</div>'
-      })
+      // Vue.component('cell', {
+      //   props: ['value'],
+      //   template: '<div class="cell">{{value}}</div>'
+      // })
+      //
+      // Vue.component('row', {
+      //   props: ['item', 'meta'],
+      //   template:
+      //   '<div class="row">'+
+      //     '<cell v-for="col in meta" :value="item[col.key]"></cell>'+
+      //   '</div>'
+      // })
+      //
+      // Vue.component('grid', {
+      // 	props: ['columns', 'rows'],
+      //   template:
+      //   '<div>'+
+      //     '<row v-for="row in rows" :item="row" :meta="columns"></row>'+
+      //   '</div>'
+      // })
 
       const app = new Vue({
         el: '#app',
         data: {
           rows: [['A', 'B']],
-          columns: [{'key': 0}, {'key': 1}]
+          columns: [{'key': 0}, {'key': 1}],
+          count: 0
         }
       })
       let rowsData = [];
+      let count = 0;
 
       const socket = io();
       socket.on('grid-columns', (columns) => {
@@ -67,15 +95,18 @@
         for(let i=0; i<cellsCount; i+=colCount) {
           let row = []
           for(let j=0; j<colCount; j++) {
-            row.push(view[i+j])
+            row.push( (view[i+j] / 1000.0).toFixed(4) )
           }
           rows.push(row)
         }
         rowsData = rows;
+        count += 1;
       });
 
       function repeatOften() {
         app.rows = rowsData;
+        app.count = count;
+        count = 0;
         requestAnimationFrame(repeatOften);
       }
       requestAnimationFrame(repeatOften);
