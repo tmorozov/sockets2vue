@@ -49,6 +49,7 @@
           columns: [{'key': 0}, {'key': 1}]
         }
       })
+      let rowsData = [];
 
       const socket = io();
       socket.on('grid-columns', (columns) => {
@@ -65,13 +66,19 @@
 
         for(let i=0; i<cellsCount; i+=colCount) {
           let row = []
-          for(let j=0; j<rowsCount; j++) {
+          for(let j=0; j<colCount; j++) {
             row.push(view[i+j])
           }
           rows.push(row)
         }
-        app.rows = rows;
+        rowsData = rows;
       });
+
+      function repeatOften() {
+        app.rows = rowsData;
+        requestAnimationFrame(repeatOften);
+      }
+      requestAnimationFrame(repeatOften);
     </script>
   </body>
 </html>

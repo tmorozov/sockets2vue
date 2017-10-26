@@ -28,10 +28,10 @@ function send () {
   for (const socket of sockets) {
     socket.emit('grid-data', msg)
   }
-  setTimeout(send, 500)
+  setTimeout(send, 16)
 }
 
-setTimeout(send, 1)
+send()
 
 module.exports = {
   add,
